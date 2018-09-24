@@ -3,7 +3,7 @@ a simple ticket service that facilitates the discovery, temporary hold, and fina
 
 ## Design
 ### Assumptions
- * Current status of the seats (sold, held)  will be saved on a highly efficient database system and retrieved when one of the service methods are invoked.
+ * Current status of the seats (available, sold, held)  will be saved on a highly efficient database system and retrieved when one of the service methods are invoked.
  * Best seats are in the front of the theater.
  * If the requested number of seats are available but the may be spread across a single row or multiple rows closest to the stage.
  * Row closest to the stage is row 0
