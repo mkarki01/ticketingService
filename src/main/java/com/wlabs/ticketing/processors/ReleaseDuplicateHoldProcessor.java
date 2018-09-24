@@ -39,30 +39,29 @@ public class ReleaseDuplicateHoldProcessor extends Processor implements Callable
 		return null;
 	}
 
-
 	private void process() {
 		Map<Integer, SeatHold> mp = getSeatsHoldMap();
 		if (mp != null) {
 			Iterator it = mp.entrySet().iterator();
 			while (it.hasNext()) {
 				Map.Entry<Integer, SeatHold> seatHoldEntry = (Map.Entry<Integer, SeatHold>) it.next();
-				SeatHold seatHold =  seatHoldEntry.getValue();
-				if (seatHold.getEmailAddress().equals(email)){
+				SeatHold seatHold = seatHoldEntry.getValue();
+				if (seatHold != null && seatHold.getEmailAddress().equals(email)) {
 					Theater theater = getTheater();
-					List<Seat> seatList = theater.getListOfSeats().stream().map((x) -> freeIfNeeded(x, seatHold)).collect(Collectors.toList());
+					List<Seat> seatList = theater.getListOfSeats().stream().map((x) -> freeIfNeeded(x, seatHold))
+							.collect(Collectors.toList());
 					theater.setListOfSeats(seatList);
-					
+
 					it.remove();
 				}
 			}
 		}
 	}
-	
+
 	private Seat freeIfNeeded(Seat seat, SeatHold seatHold) {
-		for(Seat heldSeat : seatHold.getHeldSeats()) {
+		for (Seat heldSeat : seatHold.getHeldSeats()) {
 			{
-				if(heldSeat.getCol() == seat.getCol() && heldSeat.getRow() == seat.getRow())
-				{
+				if (heldSeat.getCol() == seat.getCol() && heldSeat.getRow() == seat.getRow()) {
 					seat.setStatus(Status.AVAILABLE);
 				}
 			}

@@ -68,13 +68,19 @@ public class HoldSeatsProcessorTest {
 	Future<Integer> availableSeatsCalcualtorResult;
 
 	@Mock
-	Future<Void> seatsCollectedResult;
+	Future<Void> releaseExpiredHoldProcessorResult;
+	
+	@Mock
+	Future<Void> releaseDuplicateHoldProcessorResult;
 
 	@Mock
 	AvailableSeatsProcessor availableSeatsRetrieverMock;
 
 	@Mock
-	ReleaseExpiredHoldProcessor releaseSeatsProcessorMock;
+	ReleaseExpiredHoldProcessor releaseExpiredHoldProcessorMock;
+	
+	@Mock
+	ReleaseDuplicateHoldProcessor releaseDuplicateHoldProcessorMock;
 
 	@Before
 	public void setUp() throws Exception {
@@ -82,18 +88,11 @@ public class HoldSeatsProcessorTest {
 		PowerMockito.whenNew(ReentrantReadWriteLock.class).withNoArguments().thenReturn(reentrantReadWritereadLockMock);
 		when(reentrantReadWritereadLockMock.writeLock()).thenReturn(writeLockMock);
 		when(reentrantReadWritereadLockMock.readLock()).thenReturn(readLockMock);
-		// Whitebox.setInternalState(seatHolderSpy, "lock",
-		// reentrantReadWritereadLockMock);
-		// Whitebox.setInternalState(reentrantReadWritereadLockMock, "lock",
-		// reentrantReadWritereadLockMock);
-		// Whitebox.setInternalState(releaseSeatsProcessorMock, "lock",
-		// reentrantReadWritereadLockMock);
 		PowerMockito.mockStatic(Executors.class);
 		when(Executors.newFixedThreadPool(1)).thenReturn(executorServiceMock);
-		// executorServiceMock = spy(Executors.newFixedThreadPool(1));
 		when(availableSeatsRetrieverMock.getTheater()).thenReturn(theater);
-		when(releaseSeatsProcessorMock.getTheater()).thenReturn(theater);
-
+		when(releaseExpiredHoldProcessorMock.getTheater()).thenReturn(theater);
+		when(releaseDuplicateHoldProcessorMock.getTheater()).thenReturn(theater);
 	}
 
 	private void initializeTheater(int rowCount, int colCount) {
@@ -115,17 +114,13 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatReturnsSeatsFromRightSideOfTheStageWhenAll10Available() throws Exception {
 		initializeTheater(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
+		givenMockProcessors();
 
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 4, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
-		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
+
 		when(availableSeatsCalcualtorResult.get()).thenReturn(10);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -148,16 +143,11 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatReturnsSeatsFromLeftSideOfTheStageWhenOnlyLeftSideAvailable() throws Exception {
 		givenSeatsAvailableOnLeftSideOnly(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
+		givenMockProcessors();
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 4, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
-		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
 		when(availableSeatsCalcualtorResult.get()).thenReturn(10);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -181,16 +171,11 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatReturnsSeatsSpreadAcrossARow() throws Exception {
 		givenMiddleSeatsReserved(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
+		givenMockProcessors();
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 4, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
-		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
 		when(availableSeatsCalcualtorResult.get()).thenReturn(10);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -211,17 +196,12 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatReturnsSeatsSpreadAcrossMultipleRows() throws Exception {
 		givenLessThanFourSeatsPerRow(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
+		givenMockProcessors();
 
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 4, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
-		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
 		when(availableSeatsCalcualtorResult.get()).thenReturn(10);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -241,17 +221,14 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatDoesNotReturnSeatsIfMoreThanAvailableRequested() throws Exception {
 		givenLessThanFourSeatsPerRow(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
-
+		givenMockProcessors();
+		
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 100, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
 		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
+		when(executorServiceMock.submit(releaseExpiredHoldProcessorMock)).thenReturn(releaseExpiredHoldProcessorResult);
 		when(availableSeatsCalcualtorResult.get()).thenReturn(70);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -264,17 +241,12 @@ public class HoldSeatsProcessorTest {
 	public void testHoldSeatReturnsSeatsFromSecondRowGivenFirstRowReserved() throws Exception {
 		givenFirstRowNotAvailable(10, 10);
 		seatsHoldMap = new HashMap<>();
-		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(availableSeatsRetrieverMock);
-		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
-				.thenReturn(releaseSeatsProcessorMock);
-
+		givenMockProcessors();
+		
 		seatHolderSpy = spy(new HoldSeatsProcessor(theater, seatsHoldMap, 4, "tester@test.com"));
 		when(seatHolderSpy.getTheater()).thenReturn(theater);
-		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
-		when(executorServiceMock.submit(releaseSeatsProcessorMock)).thenReturn(seatsCollectedResult);
 		when(availableSeatsCalcualtorResult.get()).thenReturn(10);
-		when(seatsCollectedResult.get()).thenReturn(null);
+		when(releaseExpiredHoldProcessorResult.get()).thenReturn(null);
 		when(writeLockMock.tryLock()).thenReturn(true);
 		when(readLockMock.tryLock()).thenReturn(true);
 		when(seatHolderSpy.getSeatsHoldMap()).thenReturn(seatsHoldMap);
@@ -289,6 +261,18 @@ public class HoldSeatsProcessorTest {
 			assertTrue(seat.getHeldTime().isBefore(Instant.now()));
 			assertThat(seat.getStatus(), CoreMatchers.equalTo(Status.HELD));
 		}
+	}
+
+	private void givenMockProcessors() throws Exception {
+		PowerMockito.whenNew(AvailableSeatsProcessor.class).withArguments(theater, seatsHoldMap)
+				.thenReturn(availableSeatsRetrieverMock);
+		PowerMockito.whenNew(ReleaseExpiredHoldProcessor.class).withArguments(theater, seatsHoldMap)
+				.thenReturn(releaseExpiredHoldProcessorMock);
+		PowerMockito.whenNew(ReleaseDuplicateHoldProcessor.class).withArguments(theater, seatsHoldMap, "tester@test.com")
+		.thenReturn(releaseDuplicateHoldProcessorMock);
+		when(executorServiceMock.submit(availableSeatsRetrieverMock)).thenReturn(availableSeatsCalcualtorResult);
+		when(executorServiceMock.submit(releaseExpiredHoldProcessorMock)).thenReturn(releaseExpiredHoldProcessorResult);
+		when(executorServiceMock.submit(releaseDuplicateHoldProcessorMock)).thenReturn(releaseDuplicateHoldProcessorResult);
 	}
 
 	private void givenFirstRowNotAvailable(int rowCount, int colCount) {
